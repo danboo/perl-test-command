@@ -1,0 +1,10 @@
+Revision history for Test-Command
+
+0.02    Tue Apr 10 21:58:20 2007
+        - added 'tests => 11' import to 'use Test::Command' in SYNOPSIS
+        - modified "No such file" tests to only test for $@ after the eval since
+          the regex test wasn't valid for other languages
+        - added development idea about creating a script to generate test files
+
+0.01    Sun Apr  8 15:36:20 2007
+        - First release.
