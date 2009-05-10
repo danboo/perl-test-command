@@ -1,5 +1,12 @@
 Revision history for Test-Command
 
+0.03    Sat May 9 32:21:12 2009
+        - use POSIX::WEXITSTATUS() to find exit status instead of manual bit shift
+        - added terminating signal handling via POSIX::WTERMSIG() (was mentioned in
+          "DEVELOPMENT IDEAS" but finally spurred on by Lanny Ripple via
+          http://rt.cpan.org/Public/Bug/Display.html?id=43541)
+        - added t/06-signal.t
+
 0.02    Tue Apr 10 21:58:20 2007
         - added 'tests => 11' import to 'use Test::Command' in SYNOPSIS
         - modified "No such file" tests to only test for $@ after the eval since
