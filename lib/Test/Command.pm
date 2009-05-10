@@ -5,6 +5,7 @@ use strict;
 
 use Carp qw/ confess /;
 use File::Temp qw/ tempfile /;
+use POSIX qw(:sys_wait_h);
 
 use base 'Test::Builder::Module';
 
@@ -12,6 +13,10 @@ our @EXPORT = qw(
                   exit_is_num
                   exit_isnt_num
                   exit_cmp_ok
+
+                  signal_is_num
+                  signal_isnt_num
+                  signal_cmp_ok
 
                   stdout_is_eq
                   stdout_isnt_eq
@@ -39,15 +44,15 @@ Test::Command - Test routines for external commands
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
-Test the exit status, STDOUT or STDERR of an external command.
+Test the exit status, signal, STDOUT or STDERR of an external command.
 
    use Test::Command tests => 11;
 
@@ -61,6 +66,12 @@ Test the exit status, STDOUT or STDERR of an external command.
    $cmd = 'false';
 
    exit_isnt_num($cmd, 0);
+
+   ## testing terminating signal 
+
+   $cmd = 'true';
+
+   signal_is_num($cmd, 0);
 
    ## testing STDOUT
 
@@ -86,6 +97,7 @@ Test the exit status, STDOUT or STDERR of an external command.
    my $echo_test = Test::Command->new( cmd => 'echo out' );
 
    $echo_test->exit_is_num(0);
+   $echo_test->signal_is_num(0);
    $echo_test->stdout_is_eq("out\n");
 
    ## force a re-run of the command
@@ -96,8 +108,8 @@ Test the exit status, STDOUT or STDERR of an external command.
 
 C<Test::Command> intends to bridge the gap between the well tested functions and
 objects you choose and their usage in your programs. By examining the exit
-status, STDOUT and STDERR of your program you can determine if it is behaving as
-expected.
+status, terminating signal, STDOUT and STDERR of your program you can determine
+if it is behaving as expected.
 
 This includes testing the various combinations and permutations of options and
 arguments as well as the interactions between the various functions and objects
@@ -187,11 +199,12 @@ sub run
    {
    my ($self) = @_;
 
-   my ($exit_status, $stdout_file, $stderr_file) = _run_cmd( $self->{'cmd'} );
+   my $run_info = _run_cmd( $self->{'cmd'} );
 
-   $self->{'result'}{'exit_status'} = $exit_status;
-   $self->{'result'}{'stdout_file'} = $stdout_file;
-   $self->{'result'}{'stderr_file'} = $stderr_file;
+   $self->{'result'}{'exit_status'} = $run_info->{'exit_status'};
+   $self->{'result'}{'term_signal'} = $run_info->{'term_signal'};
+   $self->{'result'}{'stdout_file'} = $run_info->{'stdout_file'};
+   $self->{'result'}{'stderr_file'} = $run_info->{'stderr_file'};
 
    return $self;
 
@@ -341,9 +354,7 @@ sub _get_result
          $cmd->run;
          }
 
-      return @{ $cmd->{'result'} }{ qw/ exit_status
-                                        stdout_file
-                                        stderr_file / };
+      return $cmd->{'result'};
       }
    else
       {
@@ -381,7 +392,9 @@ sub _run_cmd
    open STDERR, '>&' . fileno $temp_stderr_fh or confess 'Cannot duplicate temporary STDERR';
 
    ## run the command
-   my $exit_status = system(@{ $cmd }) >> 8;
+   my $system_return = system(@{ $cmd });
+   my $exit_status   = WEXITSTATUS($system_return);
+   my $term_signal   = WTERMSIG($system_return);
 
    ## close and restore STDOUT and STDERR to original handles
    close STDOUT or confess "failed to close STDOUT: $!";
@@ -389,7 +402,10 @@ sub _run_cmd
    open STDOUT, '>&' . fileno $saved_stdout or confess 'Cannot restore STDOUT';
    open STDERR, '>&' . fileno $saved_stderr or confess 'Cannot restore STDERR';
 
-   return ($exit_status, $temp_stdout_file, $temp_stderr_file);
+   return { exit_status => $exit_status,
+   	        term_signal => $term_signal,
+   	        stdout_file => $temp_stdout_file,
+   	        stderr_file => $temp_stderr_file };
 
    }
 
@@ -411,11 +427,11 @@ sub exit_is_num
    {
    my ($cmd, $exp, $name) = @_;
 
-   my ($exit_status) = _get_result($cmd);
-
+   my $result = _get_result($cmd);
+   
    $name = _build_name($name, @_);
 
-   return __PACKAGE__->builder->is_num($exit_status, $exp, $name);
+   return __PACKAGE__->builder->is_num($result->{'exit_status'}, $exp, $name);
    }
 
 =head3 exit_isnt_num
@@ -431,11 +447,11 @@ sub exit_isnt_num
    {
    my ($cmd, $not_exp, $name) = @_;
 
-   my ($exit_status) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
    $name = _build_name($name, @_);
 
-   return __PACKAGE__->builder->isnt_num($exit_status, $not_exp, $name);
+   return __PACKAGE__->builder->isnt_num($result->{'exit_status'}, $not_exp, $name);
    }
 
 =head3 exit_cmp_ok
@@ -452,11 +468,77 @@ sub exit_cmp_ok
    {
    my ($cmd, $op, $exp, $name) = @_;
 
-   my ($exit_status) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
    $name = _build_name($name, @_);
 
-   return __PACKAGE__->builder->cmp_ok($exit_status, $op, $exp, $name);
+   return __PACKAGE__->builder->cmp_ok($result->{'exit_status'}, $op, $exp, $name);
+   }
+
+=head2 Testing Terminating Signal
+
+The test routines below compare against the lower 8 bits of the exit status
+of the executed command.
+
+=head3 signal_is_num
+
+   signal_is_num($cmd, $exp_num, $name)
+
+If the terminating signal of the command is numerically equal to the expected number,
+this passes. Otherwise it fails.
+
+=cut
+
+sub signal_is_num
+   {
+   my ($cmd, $exp, $name) = @_;
+
+   my $result = _get_result($cmd);
+   
+   $name = _build_name($name, @_);
+
+   return __PACKAGE__->builder->is_num($result->{'term_signal'}, $exp, $name);
+   }
+
+=head3 signal_isnt_num
+
+   signal_isnt_num($cmd, $unexp_num, $name)
+
+If the terminating signal of the command is B<not> numerically equal to the given
+number, this passes. Otherwise it fails.
+
+=cut
+
+sub signal_isnt_num
+   {
+   my ($cmd, $not_exp, $name) = @_;
+
+   my $result = _get_result($cmd);
+
+   $name = _build_name($name, @_);
+
+   return __PACKAGE__->builder->isnt_num($result->{'term_signal'}, $not_exp, $name);
+   }
+
+=head3 signal_cmp_ok
+
+   signal_cmp_ok($cmd, $op, $operand, $name)
+
+If the terminating signal of the command is compared with the given operand
+using the given operator, and that operation returns true, this passes. Otherwise
+it fails.
+
+=cut
+
+sub signal_cmp_ok
+   {
+   my ($cmd, $op, $exp, $name) = @_;
+
+   my $result = _get_result($cmd);
+
+   $name = _build_name($name, @_);
+
+   return __PACKAGE__->builder->cmp_ok($result->{'term_signal'}, $op, $exp, $name);
    }
 
 =head2 Testing STDOUT
@@ -477,9 +559,9 @@ sub stdout_is_eq
    {
    my ($cmd, $exp, $name) = @_;
 
-   my (undef, $stdout_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stdout_text = _slurp($stdout_file);
+   my $stdout_text = _slurp($result->{'stdout_file'});
 
    $name = _build_name($name, @_);
 
@@ -499,9 +581,9 @@ sub stdout_isnt_eq
    {
    my ($cmd, $not_exp, $name) = @_;
 
-   my (undef, $stdout_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stdout_text = _slurp($stdout_file);
+   my $stdout_text = _slurp($result->{'stdout_file'});
 
    $name = _build_name($name, @_);
 
@@ -521,9 +603,9 @@ sub stdout_is_num
    {
    my ($cmd, $exp, $name) = @_;
 
-   my (undef, $stdout_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stdout_text = _slurp($stdout_file);
+   my $stdout_text = _slurp($result->{'stdout_file'});
 
    $name = _build_name($name, @_);
 
@@ -543,9 +625,9 @@ sub stdout_isnt_num
    {
    my ($cmd, $not_exp, $name) = @_;
 
-   my (undef, $stdout_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stdout_text = _slurp($stdout_file);
+   my $stdout_text = _slurp($result->{'stdout_file'});
 
    $name = _build_name($name, @_);
 
@@ -565,9 +647,9 @@ sub stdout_like
    {
    my ($cmd, $exp, $name) = @_;
 
-   my (undef, $stdout_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stdout_text = _slurp($stdout_file);
+   my $stdout_text = _slurp($result->{'stdout_file'});
 
    $name = _build_name($name, @_);
 
@@ -587,9 +669,9 @@ sub stdout_unlike
    {
    my ($cmd, $exp, $name) = @_;
 
-   my (undef, $stdout_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stdout_text = _slurp($stdout_file);
+   my $stdout_text = _slurp($result->{'stdout_file'});
 
    $name = _build_name($name, @_);
 
@@ -610,9 +692,9 @@ sub stdout_cmp_ok
    {
    my ($cmd, $op, $exp, $name) = @_;
 
-   my (undef, $stdout_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stdout_text = _slurp($stdout_file);
+   my $stdout_text = _slurp($result->{'stdout_file'});
 
    $name = _build_name($name, @_);
 
@@ -633,10 +715,10 @@ sub stdout_is_file
    {
    my ($cmd, $exp_file, $name) = @_;
 
-   my (undef, $got_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
    my ($ok, $diff_start, $got_line, $exp_line, $col_mark) =
-      _compare_files($got_file, $exp_file);
+      _compare_files($result->{'stdout_file'}, $exp_file);
 
    $name = _build_name($name, @_);
 
@@ -674,9 +756,9 @@ sub stderr_is_eq
    {
    my ($cmd, $exp, $name) = @_;
 
-   my (undef, undef, $stderr_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stderr_text = _slurp($stderr_file);
+   my $stderr_text = _slurp($result->{'stderr_file'});
 
    $name = _build_name($name, @_);
 
@@ -696,9 +778,9 @@ sub stderr_isnt_eq
    {
    my ($cmd, $not_exp, $name) = @_;
 
-   my (undef, undef, $stderr_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stderr_text = _slurp($stderr_file);
+   my $stderr_text = _slurp($result->{'stderr_file'});
 
    $name = _build_name($name, @_);
 
@@ -718,9 +800,9 @@ sub stderr_is_num
    {
    my ($cmd, $exp, $name) = @_;
 
-   my (undef, undef, $stderr_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stderr_text = _slurp($stderr_file);
+   my $stderr_text = _slurp($result->{'stderr_file'});
 
    $name = _build_name($name, @_);
 
@@ -740,9 +822,9 @@ sub stderr_isnt_num
    {
    my ($cmd, $not_exp, $name) = @_;
 
-   my (undef, undef, $stderr_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stderr_text = _slurp($stderr_file);
+   my $stderr_text = _slurp($result->{'stderr_file'});
 
    $name = _build_name($name, @_);
 
@@ -762,9 +844,9 @@ sub stderr_like
    {
    my ($cmd, $exp, $name) = @_;
 
-   my (undef, undef, $stderr_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stderr_text = _slurp($stderr_file);
+   my $stderr_text = _slurp($result->{'stderr_file'});
 
    $name = _build_name($name, @_);
 
@@ -784,9 +866,9 @@ sub stderr_unlike
    {
    my ($cmd, $exp, $name) = @_;
 
-   my (undef, undef, $stderr_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stderr_text = _slurp($stderr_file);
+   my $stderr_text = _slurp($result->{'stderr_file'});
 
    $name = _build_name($name, @_);
 
@@ -807,9 +889,9 @@ sub stderr_cmp_ok
    {
    my ($cmd, $op, $exp, $name) = @_;
 
-   my (undef, undef, $stderr_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
-   my $stderr_text = _slurp($stderr_file);
+   my $stderr_text = _slurp($result->{'stderr_file'});
 
    $name = _build_name($name, @_);
 
@@ -830,10 +912,10 @@ sub stderr_is_file
    {
    my ($cmd, $exp_file, $name) = @_;
 
-   my (undef, undef, $got_file) = _get_result($cmd);
+   my $result = _get_result($cmd);
 
    my ($ok, $diff_start, $got_line, $exp_line, $col_mark) =
-      _compare_files($got_file, $exp_file);
+      _compare_files($result->{'stderr_file'}, $exp_file);
 
    $name = _build_name($name, @_);
 
@@ -922,8 +1004,6 @@ under the same terms as Perl itself.
 =item * allow testing with randomized/permuted/collapsed opts and args
 
 =back
-
-=item * make use of POSIX::W* constants and macros to test exit by signal
 
 =item * potential test functions:
 
