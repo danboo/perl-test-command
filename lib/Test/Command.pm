@@ -13,10 +13,14 @@ our @EXPORT = qw(
                   exit_is_num
                   exit_isnt_num
                   exit_cmp_ok
+                  exit_is_defined
+                  exit_is_undef
 
                   signal_is_num
                   signal_isnt_num
                   signal_cmp_ok
+                  signal_is_defined
+                  signal_is_undef
 
                   stdout_is_eq
                   stdout_isnt_eq
@@ -44,11 +48,11 @@ Test::Command - Test routines for external commands
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -393,8 +397,8 @@ sub _run_cmd
 
    ## run the command
    my $system_return = system(@{ $cmd });
-   my $exit_status   = WEXITSTATUS($system_return);
-   my $term_signal   = WTERMSIG($system_return);
+   my $exit_status   = WIFEXITED($system_return)   ? WEXITSTATUS($system_return) : undef;
+   my $term_signal   = WIFSIGNALED($system_return) ? WTERMSIG($system_return)    : undef;
 
    ## close and restore STDOUT and STDERR to original handles
    close STDOUT or confess "failed to close STDOUT: $!";
@@ -475,6 +479,48 @@ sub exit_cmp_ok
    return __PACKAGE__->builder->cmp_ok($result->{'exit_status'}, $op, $exp, $name);
    }
 
+=head3 exit_is_defined
+
+   exit_is_defined($cmd, $name)
+
+If the exit status of the command is defined, this passes. Otherwise it
+fails. A defined exit status indicates that the command exited normally
+by calling exit() or running off the end of the program.
+
+=cut
+
+sub exit_is_defined
+   {
+   my ($cmd, $op, $exp, $name) = @_;
+
+   my $result = _get_result($cmd);
+
+   $name = _build_name($name, @_);
+
+   return __PACKAGE__->builder->ok(defined $result->{'exit_status'}, $name);
+   }
+
+=head3 exit_is_undef
+
+   exit_is_undef($cmd, $name)
+
+If the exit status of the command is not defined, this passes. Otherwise it
+fails. An undefined exit status indicates that the command likely exited
+due to a signal.
+
+=cut
+
+sub exit_is_undef
+   {
+   my ($cmd, $op, $exp, $name) = @_;
+
+   my $result = _get_result($cmd);
+
+   $name = _build_name($name, @_);
+
+   return __PACKAGE__->builder->ok(! defined $result->{'exit_status'}, $name);
+   }
+
 =head2 Testing Terminating Signal
 
 The test routines below compare against the lower 8 bits of the exit status
@@ -539,6 +585,48 @@ sub signal_cmp_ok
    $name = _build_name($name, @_);
 
    return __PACKAGE__->builder->cmp_ok($result->{'term_signal'}, $op, $exp, $name);
+   }
+
+=head3 signal_is_defined
+
+   signal_is_defined($cmd, $name)
+
+If the terminating signal of the command is defined, this passes. Otherwise it
+fails. A defined signal indicates that the command likely exited due to a
+signal.
+
+=cut
+
+sub signal_is_defined
+   {
+   my ($cmd, $op, $exp, $name) = @_;
+
+   my $result = _get_result($cmd);
+
+   $name = _build_name($name, @_);
+
+   return __PACKAGE__->builder->ok(defined $result->{'term_signal'}, $name);
+   }
+
+=head3 signal_is_undef
+
+   signal_is_undef($cmd, $name)
+
+If the terminating signal of the command is not defined, this passes.
+Otherwise it fails. An undefined signal indicates that the command exited
+normally by calling exit() or running off the end of the program.
+
+=cut
+
+sub signal_is_undef
+   {
+   my ($cmd, $op, $exp, $name) = @_;
+
+   my $result = _get_result($cmd);
+
+   $name = _build_name($name, @_);
+
+   return __PACKAGE__->builder->ok(! defined $result->{'term_signal'}, $name);
    }
 
 =head2 Testing STDOUT

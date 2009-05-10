@@ -1,6 +1,11 @@
 Revision history for Test-Command
 
-0.03    Sat May 9 32:21:12 2009
+0.04    Sun May 10 09:38:05 2009
+        - exit and signal values can be undef if POSIX::WIFEXITED() or POSIX::WIFSIGNALED
+          return false respectively
+        - added exit_is_defined(), exit_is_undef(), signal_is_defined() and signal_is_undef()   
+
+0.03    Sat May 9 23:21:12 2009
         - use POSIX::WEXITSTATUS() to find exit status instead of manual bit shift
         - added terminating signal handling via POSIX::WTERMSIG() (was mentioned in
           "DEVELOPMENT IDEAS" but finally spurred on by Lanny Ripple via

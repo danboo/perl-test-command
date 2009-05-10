@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 29;
+use Test::More tests => 27;
 
 use Test::Command;
 
@@ -22,9 +22,7 @@ $test_perl->exit_is_num(0);
 $test_perl->exit_isnt_num(1);
 $test_perl->exit_cmp_ok('<', 1);
 
-$test_perl->signal_is_num(0);
-$test_perl->signal_isnt_num(1);
-$test_perl->signal_cmp_ok('<', 1);
+$test_perl->signal_is_undef;
 
 $test_perl->stdout_is_eq("foo\nbar\n");
 $test_perl->stdout_isnt_eq("bar\nfoo\n");
