@@ -48,11 +48,11 @@ Test::Command - Test routines for external commands
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -396,9 +396,10 @@ sub _run_cmd
    open STDERR, '>&' . fileno $temp_stderr_fh or confess 'Cannot duplicate temporary STDERR';
 
    ## run the command
-   my $system_return = system(@{ $cmd });
-   my $exit_status   = WIFEXITED($system_return)   ? WEXITSTATUS($system_return) : undef;
-   my $term_signal   = WIFSIGNALED($system_return) ? WTERMSIG($system_return)    : undef;
+   system(@{ $cmd });
+   my $system_return = defined ${^CHILD_ERROR_NATIVE} ? ${^CHILD_ERROR_NATIVE}      : $?;
+   my $exit_status   = WIFEXITED($system_return)      ? WEXITSTATUS($system_return) : undef;
+   my $term_signal   = WIFSIGNALED($system_return)    ? WTERMSIG($system_return)    : undef;
 
    ## close and restore STDOUT and STDERR to original handles
    close STDOUT or confess "failed to close STDOUT: $!";

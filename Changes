@@ -1,5 +1,8 @@
 Revision history for Test-Command
 
+0.05    Mon May 11 21:32:15 2009
+        - use ${^CHILD_ERROR_NATIVE} if available (hopefully will help with BSD test failures)
+
 0.04    Sun May 10 09:38:05 2009
         - exit and signal values can be undef if POSIX::WIFEXITED() or POSIX::WIFSIGNALED
           return false respectively
