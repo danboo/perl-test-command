@@ -1,5 +1,9 @@
 Revision history for Test-Command
 
+0.06    Mon May 11 23:01:12 2009
+        - only use POSIX::W* macros when available
+        - skip signal tests on MSWin32
+
 0.05    Mon May 11 21:32:15 2009
         - use ${^CHILD_ERROR_NATIVE} if available (hopefully will help with BSD test failures)
 
