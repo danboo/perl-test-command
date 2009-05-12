@@ -74,7 +74,7 @@ use base Test::Command;
 
 package main;
 
-my $test_perl = Test::Command::Derived->new( cmd => qq($^X -le "print qq(foo\nbar); print STDERR qq(bar\nfoo)") );
+$test_perl = Test::Command::Derived->new( cmd => qq($^X -le "print qq(foo\nbar); print STDERR qq(bar\nfoo)") );
 
 ok(defined $test_perl, 'defined $test_perl');
 
