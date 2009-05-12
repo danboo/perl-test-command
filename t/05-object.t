@@ -22,7 +22,11 @@ $test_perl->exit_is_num(0);
 $test_perl->exit_isnt_num(1);
 $test_perl->exit_cmp_ok('<', 1);
 
-$test_perl->signal_is_undef;
+SKIP:
+   {
+   skip("not sure about Win32 signal support", 1) if $^O eq 'MSWin32';
+   $test_perl->signal_is_undef;
+   }
 
 $test_perl->stdout_is_eq("foo\nbar\n");
 $test_perl->stdout_isnt_eq("bar\nfoo\n");
