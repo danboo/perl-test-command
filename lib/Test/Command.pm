@@ -52,11 +52,11 @@ Test::Command - Test routines for external commands
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 =head1 SYNOPSIS
 
@@ -332,7 +332,7 @@ sub _build_name
 
    defined $cmd or confess '$cmd is undefined';
 
-   if (ref $cmd eq 'Test::Command')
+   if ( ref $cmd && UNIVERSAL::isa($cmd, 'Test::Command') ) 
       {
       $cmd = $cmd->{'cmd'};
       }
@@ -353,7 +353,7 @@ sub _get_result
 
    defined $cmd or confess '$cmd is undefined';
 
-   if ( ref $cmd eq 'Test::Command' )
+   if ( ref $cmd && UNIVERSAL::isa($cmd, 'Test::Command') ) 
       {
 
       ## run the command if needed

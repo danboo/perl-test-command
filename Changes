@@ -1,29 +1,38 @@
 Revision history for Test-Command
 
-0.06    Mon May 11 23:01:12 2009
+0.07    Mon May 11 23:42 2009
+        - removed internal requirement that ref $self eq 'Test::Command' to
+          allow subclassing (requested by Lanny Ripple via
+          http://rt.cpan.org/Public/Bug/Display.html?id=43541)
+
+0.06    Mon May 11 23:01 2009
         - only use POSIX::W* macros when available
         - skip signal tests on MSWin32
 
-0.05    Mon May 11 21:32:15 2009
-        - use ${^CHILD_ERROR_NATIVE} if available (hopefully will help with BSD test failures)
+0.05    Mon May 11 21:32 2009
+        - use ${^CHILD_ERROR_NATIVE} if available (hopefully will help with
+          BSD test failures)
 
-0.04    Sun May 10 09:38:05 2009
-        - exit and signal values can be undef if POSIX::WIFEXITED() or POSIX::WIFSIGNALED
-          return false respectively
-        - added exit_is_defined(), exit_is_undef(), signal_is_defined() and signal_is_undef()   
+0.04    Sun May 10 09:38 2009
+        - exit and signal values can be undef if POSIX::WIFEXITED() or
+          POSIX::WIFSIGNALED return false respectively
+        - added exit_is_defined(), exit_is_undef(), signal_is_defined() and
+          signal_is_undef()   
 
-0.03    Sat May 9 23:21:12 2009
-        - use POSIX::WEXITSTATUS() to find exit status instead of manual bit shift
-        - added terminating signal handling via POSIX::WTERMSIG() (was mentioned in
-          "DEVELOPMENT IDEAS" but finally spurred on by Lanny Ripple via
-          http://rt.cpan.org/Public/Bug/Display.html?id=43541)
+0.03    Sat May 9 23:21 2009
+        - use POSIX::WEXITSTATUS() to find exit status instead of manual bit
+          shift
+        - added terminating signal handling via POSIX::WTERMSIG() (was
+          mentioned in "DEVELOPMENT IDEAS" but finally spurred on by Lanny
+          Ripple via http://rt.cpan.org/Public/Bug/Display.html?id=43541)
         - added t/06-signal.t
 
-0.02    Tue Apr 10 21:58:20 2007
+0.02    Tue Apr 10 21:58 2007
         - added 'tests => 11' import to 'use Test::Command' in SYNOPSIS
-        - modified "No such file" tests to only test for $@ after the eval since
-          the regex test wasn't valid for other languages
-        - added development idea about creating a script to generate test files
+        - modified "No such file" tests to only test for $@ after the eval
+          since the regex test wasn't valid for other languages
+        - added development idea about creating a script to generate test
+          files
 
-0.01    Sun Apr  8 15:36:20 2007
+0.01    Sun Apr  8 15:36 2007
         - First release.

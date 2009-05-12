@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 27;
+use Test::More tests => 32;
 
 use Test::Command;
 
@@ -67,3 +67,21 @@ is(ref $test_perl, 'Test::Command', 'ref $test_perl');
 $test_perl->exit_is_num(0);
 $test_perl->stdout_is_eq("foo\nbar\n");
 $test_perl->stderr_is_eq("bar\nfoo\n");
+
+package Test::Command::Derived;
+
+use base Test::Command;
+
+package main;
+
+my $test_perl = Test::Command::Derived->new( cmd => qq($^X -le "print qq(foo\nbar); print STDERR qq(bar\nfoo)") );
+
+ok(defined $test_perl, 'defined $test_perl');
+
+is(ref $test_perl, 'Test::Command::Derived', 'ref $test_perl');
+
+$test_perl->run;
+
+$test_perl->exit_is_num(0);
+$test_perl->exit_isnt_num(1);
+$test_perl->exit_cmp_ok('<', 1);
