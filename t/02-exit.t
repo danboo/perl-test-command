@@ -15,7 +15,7 @@ exit_is_defined(qq($^X -e "exit 255"));
 SKIP:
    {
    skip("not sure about Win32 signal support", 1) if $^O eq 'MSWin32';
-   exit_is_undef(qq($^X -MPOSIX -e "POSIX::raise( &POSIX::SIGTERM )"));
+   exit_is_undef([$^X,  '-e', 'kill q(TERM), $$']);
    }
 
 exit_isnt_num(qq($^X -e 1), 2);

@@ -41,22 +41,17 @@ our @EXPORT = qw(
 
                   );
                   
-my $posix_ok       = eval { require POSIX; };
-my $wait_macros_ok = defined &POSIX::WIFEXITED;
-eval { POSIX::WIFEXITED() };
-$wait_macros_ok = 0 if $@;                   
-
 =head1 NAME
 
 Test::Command - Test routines for external commands
 
 =head1 VERSION
 
-Version 0.07
+Version 0.08
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 =head1 SYNOPSIS
 
@@ -401,30 +396,22 @@ sub _run_cmd
 
    ## run the command
    system(@{ $cmd });
-
-   my $system_return = defined ${^CHILD_ERROR_NATIVE} ? ${^CHILD_ERROR_NATIVE} : $?;
+   
+   my $system_return = defined ${^CHILD_ERROR_NATIVE} ? ${^CHILD_ERROR_NATIVE} : $?; 
    
    my $exit_status;
    my $term_signal;
 
-   if ( $wait_macros_ok )
+   my $wait_status = $system_return & 127;
+   if ($wait_status)
       {
-      $exit_status = POSIX::WIFEXITED($system_return)   ? POSIX::WEXITSTATUS($system_return) : undef;
-      $term_signal = POSIX::WIFSIGNALED($system_return) ? POSIX::WTERMSIG($system_return)    : undef;
+      $exit_status = undef;
+      $term_signal = $wait_status;
       }
    else
       {
-      my $wait_status = $system_return & 127;
-      if ($wait_status)
-         {
-         $exit_status = undef;
-         $term_signal = $wait_status;
-         }
-      else
-         {
-         $exit_status = $system_return >> 8;
-         $term_signal = undef;
-         }
+      $exit_status = $system_return >> 8;
+      $term_signal = undef;
       }
 
    ## close and restore STDOUT and STDERR to original handles
