@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 32;
+use Test::More tests => 38;
 
 use Test::Command;
 
@@ -18,16 +18,21 @@ is(ref $test_perl, 'Test::Command', 'ref $test_perl');
 
 $test_perl->run;
 
+is( $test_perl->exit_value, 0, "exit_value" );
+
 $test_perl->exit_is_num(0);
 $test_perl->exit_isnt_num(1);
 $test_perl->exit_cmp_ok('<', 1);
 
 SKIP:
    {
-   skip("not sure about Win32 signal support", 1) if $^O eq 'MSWin32';
+   skip("not sure about Win32 signal support", 2) if $^O eq 'MSWin32';
+   is( $test_perl->signal_value, undef, "signal_value" );
    $test_perl->signal_is_undef;
    }
 
+is( $test_perl->stdout_value, "foo\nbar\n", "stdout_value" );
+is( Test::Command::_slurp($test_perl->stdout_file), "foo\nbar\n", "stdout_file" );
 $test_perl->stdout_is_eq("foo\nbar\n");
 $test_perl->stdout_isnt_eq("bar\nfoo\n");
 {
@@ -40,6 +45,8 @@ $test_perl->stdout_unlike(qr/foo\nBAR/);
 $test_perl->stdout_cmp_ok('ne', "bar\nfoo\n");
 $test_perl->stdout_is_file("$FindBin::Bin/stdout.txt");
 
+is( $test_perl->stderr_value, "bar\nfoo\n", "stderr_value" );
+is( Test::Command::_slurp($test_perl->stderr_file), "bar\nfoo\n", "stderr_file" );
 $test_perl->stderr_is_eq("bar\nfoo\n");
 $test_perl->stderr_isnt_eq("foo\nbar\n");
 {

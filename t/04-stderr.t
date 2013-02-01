@@ -1,6 +1,6 @@
 #!perl
 
-use Test::Command tests => 13;
+use Test::Command tests => 15;
 
 use Test::More;
 
@@ -9,6 +9,11 @@ use FindBin;
 ## determine whether we can run perl or not
 
 system qq($^X -e 1) and BAIL_OUT('error calling perl via system');
+
+is( stderr_value(qq($^X -e "print STDERR 'foo'")),
+   "foo", "stderr_value is foo");
+is( Test::Command::_slurp(stderr_file(qq($^X -e "print STDERR 'foo'"))),
+   "foo", "stderr_file contains foo");
 
 stderr_is_eq(qq($^X -e "print STDERR 'foo'"), "foo");
 

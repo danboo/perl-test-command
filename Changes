@@ -1,5 +1,10 @@
 Revision history for Test-Command
 
+0.09    2/1/2013
+        - added exit_value(), signal_value(), stdout_value(), stdout_file(),
+          stderr_value() and stderr_file() (these provide access to raw value
+          for arbitrary testing not covered by this module)
+
 0.08    Wed May 13 23:04 2009
         - removed use of POSIX module (need a better understanding of how
           to use it on BSD systems), reverted back to hand-rolled exit and

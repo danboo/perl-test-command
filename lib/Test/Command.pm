@@ -9,37 +9,43 @@ use File::Temp qw/ tempfile /;
 use base 'Test::Builder::Module';
 
 our @EXPORT = qw(
-                  exit_is_num
-                  exit_isnt_num
-                  exit_cmp_ok
-                  exit_is_defined
-                  exit_is_undef
+   exit_value
+   exit_is_num
+   exit_isnt_num
+   exit_cmp_ok
+   exit_is_defined
+   exit_is_undef
 
-                  signal_is_num
-                  signal_isnt_num
-                  signal_cmp_ok
-                  signal_is_defined
-                  signal_is_undef
+   signal_value
+   signal_is_num
+   signal_isnt_num
+   signal_cmp_ok
+   signal_is_defined
+   signal_is_undef
 
-                  stdout_is_eq
-                  stdout_isnt_eq
-                  stdout_is_num
-                  stdout_isnt_num
-                  stdout_like
-                  stdout_unlike
-                  stdout_cmp_ok
-                  stdout_is_file
+   stdout_value
+   stdout_file
+   stdout_is_eq
+   stdout_isnt_eq
+   stdout_is_num
+   stdout_isnt_num
+   stdout_like
+   stdout_unlike
+   stdout_cmp_ok
+   stdout_is_file
 
-                  stderr_is_eq
-                  stderr_isnt_eq
-                  stderr_is_num
-                  stderr_isnt_num
-                  stderr_like
-                  stderr_unlike
-                  stderr_cmp_ok
-                  stderr_is_file
+   stderr_value
+   stderr_file
+   stderr_is_eq
+   stderr_isnt_eq
+   stderr_is_num
+   stderr_isnt_num
+   stderr_like
+   stderr_unlike
+   stderr_cmp_ok
+   stderr_is_file
 
-                  );
+   );
                   
 =head1 NAME
 
@@ -47,11 +53,11 @@ Test::Command - Test routines for external commands
 
 =head1 VERSION
 
-Version 0.08
+Version 0.09
 
 =cut
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 =head1 SYNOPSIS
 
@@ -432,6 +438,24 @@ sub _run_cmd
 The test routines below compare against the exit status of the executed
 command right shifted by 8 (that is, C<$? E<gt>E<gt> 8>).
 
+=head3 exit_value
+
+   exit_value($cmd)
+
+Return the exit status of the command. Useful for performing arbitrary tests
+not covered by this module.
+
+=cut
+
+sub exit_value
+   {
+   my ($cmd) = @_;
+
+   my $result = _get_result($cmd);
+   
+   return $result->{'exit_status'};
+   }
+
 =head3 exit_is_num
 
    exit_is_num($cmd, $exp_num, $name)
@@ -540,6 +564,24 @@ sub exit_is_undef
 The test routines below compare against the lower 8 bits of the exit status
 of the executed command.
 
+=head3 signal_value
+
+   signal_value($cmd)
+
+Return the signal code of the command. Useful for performing arbitrary tests
+not covered by this module.
+
+=cut
+
+sub signal_value
+   {
+   my ($cmd) = @_;
+
+   my $result = _get_result($cmd);
+   
+   return $result->{'term_signal'};
+   }
+
 =head3 signal_is_num
 
    signal_is_num($cmd, $exp_num, $name)
@@ -647,6 +689,43 @@ sub signal_is_undef
 
 Except where specified, the test routines below treat STDOUT as a single slurped
 string.
+
+=head3 stdout_value
+
+   stdout_value($cmd)
+
+Return the STDOUT of the command. Useful for performing arbitrary tests
+not covered by this module.
+
+=cut
+
+sub stdout_value
+   {
+   my ($cmd) = @_;
+
+   my $result      = _get_result($cmd);
+   my $stdout_text = _slurp($result->{'stdout_file'});
+   
+   return $stdout_text;
+   }
+
+=head3 stdout_file
+
+   stdout_file($cmd)
+
+Return the file name containing the STDOUT of the command. Useful for
+performing arbitrary tests not covered by this module.
+
+=cut
+
+sub stdout_file
+   {
+   my ($cmd) = @_;
+
+   my $result = _get_result($cmd);
+
+   return $result->{'stdout_file'};
+   }
 
 =head3 stdout_is_eq
 
@@ -844,6 +923,43 @@ EOD
 
 Except where specified, the test routines below treat STDERR as a single slurped
 string.
+
+=head3 stderr_value
+
+   stderr_value($cmd)
+
+Return the STDERR of the command. Useful for performing arbitrary tests
+not covered by this module.
+
+=cut
+
+sub stderr_value
+   {
+   my ($cmd) = @_;
+
+   my $result      = _get_result($cmd);
+   my $stderr_text = _slurp($result->{'stderr_file'});
+   
+   return $stderr_text;
+   }
+
+=head3 stderr_file
+
+   stderr_file($cmd)
+
+Return the file name containing the STDERR of the command. Useful for
+performing arbitrary tests not covered by this module.
+
+=cut
+
+sub stderr_file
+   {
+   my ($cmd) = @_;
+
+   my $result = _get_result($cmd);
+
+   return $result->{'stderr_file'};
+   }
 
 =head3 stderr_is_eq
 

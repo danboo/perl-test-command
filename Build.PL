@@ -11,6 +11,14 @@ my $builder = Module::Build->new(
         'Test::Simple' => 0.62,
     },
     add_to_cleanup      => [ 'Test-Command-*' ],
+    create_makefile_pl  => 'traditional',
+    meta_merge          => {
+       resources => {
+          repository => 'https://github.com/danboo/perl-test-command',
+          homepage   => 'https://metacpan.org/release/Test-Command',
+          bugtracker => 'http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Command',
+       },
+    },
 );
 
 $builder->create_build_script();

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::Command tests => 8;
+use Test::Command tests => 9;
 
 use Test::More;
 
@@ -24,7 +24,9 @@ SKIP:
    signal_is_undef(qq($^X -e "exit 1"));
    signal_is_undef(qq($^X -e "exit 255"));
    signal_is_undef([$^X, '-e', 1]);
-   skip("no SIGTERM found", 4) if ! exists $sig{'TERM'};
+   skip("no SIGTERM found", 5) if ! exists $sig{'TERM'};
+   is(signal_value([$^X,  '-e', 'kill ' . $sig{'TERM'} . ', $$']), $sig{'TERM'},
+      "signal_value is SIGTERM" );;
    signal_is_defined([$^X,  '-e', 'kill ' . $sig{'TERM'} . ', $$']);
    signal_cmp_ok([$^X,  '-e', 'kill ' . $sig{'TERM'} . ', $$'], '>', -1 );
    signal_isnt_num([$^X,  '-e', 'kill ' . $sig{'TERM'} . ', $$'], $sig{'TERM'} + 1 );
