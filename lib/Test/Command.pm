@@ -113,6 +113,15 @@ Test the exit status, signal, STDOUT or STDERR of an external command.
 
    $echo_test->run;
 
+   ## arbitrary results inspection
+
+   is( $echo_test->exit_value, 0,         'echo exit' );
+   is( $echo_test->signal_value, undef,   'echo signal' );
+   is( $echo_test->stdout_value, "out\n", 'echo stdout' );
+   is( $echo_test->stderr_value, '',      'echo stderr' );
+   is( -s $echo_test->stdout_file, 4,     'echo stdout file size' );
+   is( -s $echo_test->stderr_file, 0,     'echo stderr file size' );
+
 =head1 DESCRIPTION
 
 C<Test::Command> intends to bridge the gap between the well tested functions and
