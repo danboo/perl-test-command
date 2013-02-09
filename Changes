@@ -1,5 +1,8 @@
 Revision history for Test-Command
 
+0.10    2/8/2012
+        - fix signal tests on Win32 platforms
+
 0.09    2/1/2013
         - added exit_value(), signal_value(), stdout_value(), stdout_file(),
           stderr_value() and stderr_file() (these provide access to raw value

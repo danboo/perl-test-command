@@ -19,7 +19,7 @@ system qq($^X -e 1) and BAIL_OUT('error calling perl via system');
 
 SKIP:
    {
-   skip("not sure about Win32 signal support", 8) if $^O eq 'MSWin32';
+   skip("not sure about Win32 signal support", 9) if $^O eq 'MSWin32';
    signal_is_undef(qq($^X -e "exit 0"));
    signal_is_undef(qq($^X -e "exit 1"));
    signal_is_undef(qq($^X -e "exit 255"));
