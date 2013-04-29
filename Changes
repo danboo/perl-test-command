@@ -1,6 +1,9 @@
 Revision history for Test-Command
 
-0.10    2/8/2012
+0.11    4/29/2013
+        - fix determination of diagnostic test name in signal_is_undef()
+
+0.10    2/8/2013
         - fix signal tests on Win32 platforms
 
 0.09    2/1/2013

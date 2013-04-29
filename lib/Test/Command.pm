@@ -53,11 +53,11 @@ Test::Command - Test routines for external commands
 
 =head1 VERSION
 
-Version 0.10
+Version 0.11
 
 =cut
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 =head1 SYNOPSIS
 
@@ -436,9 +436,9 @@ sub _run_cmd
    open STDERR, '>&' . fileno $saved_stderr or confess 'Cannot restore STDERR';
 
    return { exit_status => $exit_status,
-   	        term_signal => $term_signal,
-   	        stdout_file => $temp_stdout_file,
-   	        stderr_file => $temp_stderr_file };
+            term_signal => $term_signal,
+            stdout_file => $temp_stdout_file,
+            stderr_file => $temp_stderr_file };
 
    }
 
@@ -685,7 +685,7 @@ normally by calling exit() or running off the end of the program.
 
 sub signal_is_undef
    {
-   my ($cmd, $op, $exp, $name) = @_;
+   my ($cmd, $name) = @_;
 
    my $result = _get_result($cmd);
 
